@@ -9,10 +9,10 @@ import java.io.Serializable;
  */
 public class Point implements Serializable {
 
-    private final Vector3d point;
-    private final Vector3d normal;
+    private Vector3d point;
+    private Vector3d normal;
 
-    private final int[] color;
+    private int[] color;
 
     public Point(double x, double y, double z, double normalX, double normalY, double normalZ, int colorRed, int colorGreen, int colorBlue) {
         point = new Vector3d(x, y, z);
@@ -20,7 +20,7 @@ public class Point implements Serializable {
         color = new int[]{colorRed, colorGreen, colorBlue};
     }
 
-    protected Point(){
+    public Point() {
         point = new Vector3d();
         normal = new Vector3d();
         color = new int[3];

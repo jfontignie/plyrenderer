@@ -6,12 +6,14 @@
          version="2.5">
 
     <servlet>
-        <servlet-name>org.plyrenderer.plyrenderer plyrendererService</servlet-name>
+        <servlet-name>plyrendererService</servlet-name>
         <servlet-class>org.plyrenderer.server.PlyRendererServiceImpl</servlet-class>
     </servlet>
+
+
     <servlet-mapping>
-        <servlet-name>org.plyrenderer.plyrenderer plyrendererService</servlet-name>
-        <url-pattern>/plyrenderer/plyrendererService</url-pattern>
+        <servlet-name>plyrendererService</servlet-name>
+        <url-pattern>/plyrenderer/PlyRendererService</url-pattern>
     </servlet-mapping>
 
 

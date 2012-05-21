@@ -5,7 +5,10 @@ import com.google.gwt.canvas.dom.client.CanvasPixelArray;
 import com.google.gwt.canvas.dom.client.Context2d;
 import com.google.gwt.canvas.dom.client.ImageData;
 import com.google.gwt.event.dom.client.*;
+import com.google.gwt.user.client.rpc.AsyncCallback;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -34,10 +37,13 @@ public class Renderer {
     private Camera camera;
 
     // The drawing canvas
-    Canvas canvas;
-    Context2d ctx;
+    private Canvas canvas;
+    private Context2d ctx;
 
     private PointCloud pointCloud;
+
+    private double fps;
+
 
 
     // Scene interaction stuff
@@ -47,36 +53,37 @@ public class Renderer {
         ZOOM
     }
 
+    private List<RendererListener> listeners;
+
 
     private boolean tracking = false;
     private Position oldMousePosition = new Position();
     Interaction interaction = Interaction.ROTATE;
 
 
-
     private void manageEvent(MouseEvent event) {
         Position newMousePosition = new Position(event.getX(), event.getY());
 
-        double x = (newMousePosition.getX() - oldMousePosition.getX()) * 1.0 / camera.viewport_width;
-        double y = (newMousePosition.getY() - oldMousePosition.getY()) * 1.0 / camera.viewport_height;
+        double x = (newMousePosition.getX() - oldMousePosition.getX()) * 1.0 / camera.getViewportWidth();
+        double y = (newMousePosition.getY() - oldMousePosition.getY()) * 1.0 / camera.getViewportHeight();
 
         if (x == 0 && y == 0) return;
 
-        logger.info("Difference: (" + x + ":" + y + ") o=" + oldMousePosition + " n=" + newMousePosition);
+        logger.finer("Difference: (" + x + ":" + y + ") o=" + oldMousePosition + " n=" + newMousePosition);
         oldMousePosition.set(newMousePosition);
 
         switch (interaction) {
             case ROTATE:
-                camera.RotateRight(x * 180.0 * DTOR);
-                camera.RotateUp(y * 180.0 * DTOR);
+                camera.rotateRight(x * 180.0 * DTOR);
+                camera.rotateUp(y * 180.0 * DTOR);
                 break;
             case TRANSLATE:
-                camera.MoveUp(y);
-                camera.MoveRight(x);
+                camera.moveUp(y);
+                camera.moveRight(x);
                 break;
             case ZOOM:
                 if (y == 0) return;
-                camera.MoveForward(-y);
+                camera.moveForward(-y);
         }
         render();
 
@@ -88,13 +95,55 @@ public class Renderer {
         ctx = canvas.getContext2d();
         camera = new Camera();
         // Set the camera parameters
-        camera.setWindow(canvas.getCoordinateSpaceWidth(),canvas.getCoordinateSpaceHeight());
+        camera.setWindow(canvas.getCoordinateSpaceWidth(), canvas.getCoordinateSpaceHeight());
 
-        pointCloud = new PointCloud(2000);
+        pointCloud = new PointCloud();
+
+        listeners = new ArrayList<RendererListener>();
+
+        canvas.addKeyDownHandler(new KeyDownHandler() {
+
+            public void onKeyDown(KeyDownEvent event) {
+
+                logger.info("Key pressed: " + event.getNativeKeyCode());
+                double x = 0.1;
+                double y = 0.1;
+                switch (event.getNativeKeyCode()) {
+                    case 37:
+                        if (event.isShiftKeyDown())
+                            camera.rotateRight(x * 0.5 * 180.0 * DTOR);
+                        else
+                            camera.moveRight(x);
+                        break;
+                    case 38:
+                        if (event.isShiftKeyDown())
+                            camera.rotateUp(y * 0.5 * 180.0 * DTOR);
+                        else
+                            camera.moveForward(y);
+                        break;
+                    case 39:
+                        if (event.isShiftKeyDown())
+                            camera.rotateRight(-x * 0.5 * 180.0 * DTOR);
+                        else
+                            camera.moveRight(-x);
+                        break;
+                    case 40:
+                        if (event.isShiftKeyDown())
+                            camera.rotateUp(-y * 0.5 * 180.0 * DTOR);
+                        else
+                            camera.moveForward(-y);
+                        break;
+                    default:
+                        return;
+                }
+                render();
+            }
+        });
+
 
         canvas.addMouseDownHandler(new MouseDownHandler() {
             public void onMouseDown(MouseDownEvent event) {
-                logger.info("Mouse down detected");
+                logger.fine("Mouse down detected");
                 oldMousePosition.setX(event.getX());
                 oldMousePosition.setY(event.getY());
                 tracking = true;
@@ -105,7 +154,7 @@ public class Renderer {
         canvas.addMouseMoveHandler(new MouseMoveHandler() {
             public void onMouseMove(MouseMoveEvent event) {
                 if (!tracking) return;
-                logger.info("Mouse moved detected");
+                logger.fine("Mouse moved detected");
                 manageEvent(event);
             }
         });
@@ -113,7 +162,7 @@ public class Renderer {
         canvas.addMouseUpHandler(new MouseUpHandler() {
             public void onMouseUp(MouseUpEvent event) {
                 if (!tracking) return;
-                logger.info("Mouse up detected");
+                logger.fine("Mouse up detected");
 
                 manageEvent(event);
                 tracking = false;
@@ -124,8 +173,12 @@ public class Renderer {
     }
 
 
-    public void initialiseData() {
-        pointCloud.InitialiseData();
+    public void initialiseData(AsyncCallback<Void> callback) {
+        pointCloud.InitialiseData(callback);
+    }
+
+    public void setInteraction(Interaction interaction) {
+        this.interaction = interaction;
     }
 
     /*
@@ -141,16 +194,16 @@ public class Renderer {
 
 
         // Set a default camera position
-        pos.set(0, box.getMinX() + box.getRangeX() * 0.5);
-        pos.set(1, box.getMinY() + box.getRangeY() * 0.5);
-        pos.set(2, box.getMinZ() + box.getRangeZ());
+        pos.setX(box.getMinX() + box.getRangeX() * 0.5);
+        pos.setY(box.getMinY() + box.getRangeY() * 0.5);
+        pos.setZ(box.getMinZ() + Math.max(box.getRangeZ(), Math.max(box.getRangeX(), box.getRangeY())));
 
         // Look at the centroid of the point data
-        dir.set(0, box.getMinX() + box.getRangeX() * 0.5);
-        dir.set(1, box.getMinY() + box.getRangeY() * 0.5);
-        dir.set(2, box.getMinZ() + box.getRangeZ() * 0.5);
+        dir.setX(box.getMinX() + box.getRangeX() * 0.5);
+        dir.setY(box.getMinY() + box.getRangeY() * 0.5);
+        dir.setZ(box.getMinZ() + box.getRangeZ() * 0.5);
 
-        camera.LookAt(pos, dir);
+        camera.lookAt(pos, dir);
     }
 
 
@@ -160,7 +213,7 @@ public class Renderer {
     */
     public void PaintBlack(CanvasPixelArray cpa) {
 
-        logger.info("Painting the background screen: " + camera.viewport_width + ":" + camera.viewport_height);
+        logger.info("Painting the background screen: " + camera.getViewportWidth() + ":" + camera.getViewportHeight());
 
 //        ctx.setFillStyle(CssColor.make(0,0,0));
 //
@@ -190,22 +243,22 @@ public class Renderer {
         double vd = camera.view_dist;
         double vda = vd * camera.aspect_ratio;
 
-        double a = camera.WorldTransform.get(0, 0);
-        double b = camera.WorldTransform.get(0, 1);
-        double c = camera.WorldTransform.get(0, 2);
-        double d = camera.WorldTransform.get(0, 3);
-        double e = camera.WorldTransform.get(1, 0);
-        double f = camera.WorldTransform.get(1, 1);
-        double g = camera.WorldTransform.get(1, 2);
-        double h = camera.WorldTransform.get(1, 3);
-        double i = camera.WorldTransform.get(2, 0);
-        double j = camera.WorldTransform.get(2, 1);
-        double k = camera.WorldTransform.get(2, 2);
-        double l = camera.WorldTransform.get(2, 3);
+        double a = camera.worldTransform.get(0, 0);
+        double b = camera.worldTransform.get(0, 1);
+        double c = camera.worldTransform.get(0, 2);
+        double d = camera.worldTransform.get(0, 3);
+        double e = camera.worldTransform.get(1, 0);
+        double f = camera.worldTransform.get(1, 1);
+        double g = camera.worldTransform.get(1, 2);
+        double h = camera.worldTransform.get(1, 3);
+        double i = camera.worldTransform.get(2, 0);
+        double j = camera.worldTransform.get(2, 1);
+        double k = camera.worldTransform.get(2, 2);
+        double l = camera.worldTransform.get(2, 3);
         double n = pointCloud.getNumberOfPoints();
 
-
-        ImageData id = ctx.createImageData(camera.viewport_width, camera.viewport_height);
+        long start = System.currentTimeMillis();
+        ImageData id = ctx.createImageData(camera.getViewportWidth(), camera.getViewportHeight());
 
         CanvasPixelArray cpa = id.getData();
 
@@ -223,21 +276,21 @@ public class Renderer {
         for (int p = 0; p < n; p++) {
             Point point = pointCloud.getPoint(p);
 
-            x = point.getPoint().get(0);
-            y = point.getPoint().get(1);
-            z = point.getPoint().get(2);
+            x = point.getPoint().getX();
+            y = point.getPoint().getY();
+            z = point.getPoint().getZ();
 
             tempx = x * a + y * b + z * c + d;
             tempz = 1.0 / (x * i + y * j + z * k + l);
             px = ca + ca * tempx * vd * tempz;
-            if (px < camera.viewport_width && px >= 0) {
+            if (px < camera.getViewportWidth() && px >= 0) {
                 tempy = x * e + y * f + z * g + h;
                 py = cb - cb * tempy * vda * tempz;
-                if (py < camera.viewport_height && py >= 0) {
+                if (py < camera.getViewportHeight() && py >= 0) {
                     // Flooring is unfortunately necessary
                     pxi = (int) Math.floor(px);
                     pyi = (int) Math.floor(py);
-                    index = (pyi * camera.viewport_width + pxi) * 4;
+                    index = (pyi * camera.getViewportWidth() + pxi) * 4;
 
                     int[] colour = point.getColor();
 
@@ -250,9 +303,27 @@ public class Renderer {
             }
         }
 
-        logger.info("Set the new image");
+        logger.fine("Set the new image");
         // Copy the canvas to the HTML5 context
         ctx.putImageData(id, 0, 0);
+
+        long end = System.currentTimeMillis();
+        fps = 1000./(end-start);
+
+        for (RendererListener listener: listeners)
+            listener.event();
+    }
+
+    public double getFps() {
+        return fps;
+    }
+
+    public void addListener(RendererListener listener) {
+        listeners.add(listener);
+    }
+
+    public interface RendererListener{
+        public void event();
     }
 
 }

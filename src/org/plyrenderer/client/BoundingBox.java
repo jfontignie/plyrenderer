@@ -30,14 +30,14 @@ public class BoundingBox {
 
     public void addPoint(Point point) {
         Vector3d p = point.getPoint();
-        if (p.get(0) < minX) minX = p.get(0);
-        if (p.get(0) > maxX) maxX = p.get(0);
+        if (p.getX() < minX) minX = p.getX();
+        if (p.getX() > maxX) maxX = p.getX();
 
-        if (p.get(1) < minY) minY = p.get(1);
-        if (p.get(1) > maxY) maxY = p.get(1);
+        if (p.getY() < minY) minY = p.getY();
+        if (p.getY() > maxY) maxY = p.getY();
 
-        if (p.get(2) < minZ) minZ = p.get(2);
-        if (p.get(2) > maxZ) maxZ = p.get(2);
+        if (p.getZ() < minZ) minZ = p.getZ();
+        if (p.getZ() > maxZ) maxZ = p.getZ();
     }
 
     public void flush() {
@@ -80,5 +80,9 @@ public class BoundingBox {
 
     public double getRangeZ() {
         return rangeZ;
+    }
+
+    public String toString() {
+        return "(" + minX + "," + maxX + ")x(" + minY + ","  + maxY + ")x(" + minZ + "," + maxZ + ")";
     }
 }

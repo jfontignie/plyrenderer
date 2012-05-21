@@ -59,15 +59,15 @@ public class Matrix3d {
         A[0] = 1;
         A[1] = 0;
         A[2] = 0;
-        A[3] = v.get(0);
+        A[3] = v.getX();
         A[4] = 0;
         A[5] = 1;
         A[6] = 0;
-        A[7] = v.get(1);
+        A[7] = v.getY();
         A[8] = 0;
         A[9] = 0;
         A[10] = 1;
-        A[11] = v.get(2);
+        A[11] = v.getZ();
         return mA;
     }
 
