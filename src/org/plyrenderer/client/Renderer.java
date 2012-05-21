@@ -4,6 +4,7 @@ import com.google.gwt.canvas.client.Canvas;
 import com.google.gwt.canvas.dom.client.CanvasPixelArray;
 import com.google.gwt.canvas.dom.client.Context2d;
 import com.google.gwt.canvas.dom.client.ImageData;
+import com.google.gwt.dom.client.Touch;
 import com.google.gwt.event.dom.client.*;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 
@@ -45,7 +46,6 @@ public class Renderer {
     private double fps;
 
 
-
     // Scene interaction stuff
     enum Interaction {
         ROTATE,
@@ -64,13 +64,18 @@ public class Renderer {
     private void manageEvent(MouseEvent event) {
         Position newMousePosition = new Position(event.getX(), event.getY());
 
-        double x = (newMousePosition.getX() - oldMousePosition.getX()) * 1.0 / camera.getViewportWidth();
-        double y = (newMousePosition.getY() - oldMousePosition.getY()) * 1.0 / camera.getViewportHeight();
+        managePositionChange(newMousePosition);
+
+    }
+
+    private void managePositionChange(Position newPosition) {
+        double x = (newPosition.getX() - oldMousePosition.getX()) * 1.0 / camera.getViewportWidth();
+        double y = (newPosition.getY() - oldMousePosition.getY()) * 1.0 / camera.getViewportHeight();
 
         if (x == 0 && y == 0) return;
 
-        logger.finer("Difference: (" + x + ":" + y + ") o=" + oldMousePosition + " n=" + newMousePosition);
-        oldMousePosition.set(newMousePosition);
+        logger.finer("Difference: (" + x + ":" + y + ") o=" + oldMousePosition + " n=" + newPosition);
+        oldMousePosition.set(newPosition);
 
         switch (interaction) {
             case ROTATE:
@@ -86,7 +91,6 @@ public class Renderer {
                 camera.moveForward(-y);
         }
         render();
-
     }
 
 
@@ -100,6 +104,7 @@ public class Renderer {
         pointCloud = new PointCloud();
 
         listeners = new ArrayList<RendererListener>();
+
 
         canvas.addKeyDownHandler(new KeyDownHandler() {
 
@@ -140,6 +145,29 @@ public class Renderer {
             }
         });
 
+
+        canvas.addTouchMoveHandler(new TouchMoveHandler() {
+            public void onTouchMove(TouchMoveEvent event) {
+                logger.info("Touch event occured");
+                event.preventDefault();
+                if (event.getChangedTouches().length() == 0) return;
+
+                int length = event.getChangedTouches().length();
+                Touch touch = event.getChangedTouches().get(length - 1);
+                Position newPosition = new Position(touch.getRelativeX(Renderer.this.canvas.getCanvasElement()), touch.getRelativeY(Renderer.this.canvas.getCanvasElement()));
+                managePositionChange(newPosition);
+
+            }
+        });
+
+        canvas.addTouchStartHandler(new TouchStartHandler() {
+            public void onTouchStart(TouchStartEvent event) {
+                logger.info("Touch start");
+                event.preventDefault();
+                Touch touch = event.getChangedTouches().get(0);
+                oldMousePosition.set(touch.getRelativeX(Renderer.this.canvas.getCanvasElement()), touch.getRelativeY(Renderer.this.canvas.getCanvasElement()));
+            }
+        });
 
         canvas.addMouseDownHandler(new MouseDownHandler() {
             public void onMouseDown(MouseDownEvent event) {
@@ -238,6 +266,7 @@ public class Renderer {
     *
     */
     public void render() {
+
         double ca = camera.alpha;
         double cb = camera.beta;
         double vd = camera.view_dist;
@@ -308,9 +337,9 @@ public class Renderer {
         ctx.putImageData(id, 0, 0);
 
         long end = System.currentTimeMillis();
-        fps = 1000./(end-start);
+        fps = 1000. / (end - start);
 
-        for (RendererListener listener: listeners)
+        for (RendererListener listener : listeners)
             listener.event();
     }
 
@@ -322,7 +351,7 @@ public class Renderer {
         listeners.add(listener);
     }
 
-    public interface RendererListener{
+    public interface RendererListener {
         public void event();
     }
 

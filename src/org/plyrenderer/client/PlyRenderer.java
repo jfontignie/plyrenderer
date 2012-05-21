@@ -40,6 +40,7 @@ public class PlyRenderer implements EntryPoint {
         canvas.setHeight(canvasHeight + "px");
         canvas.setCoordinateSpaceHeight(canvasHeight);
 
+
         renderer = new Renderer(canvas);
         renderer.initialiseData(new AsyncCallback<Void>() {
             public void onFailure(Throwable caught) {
