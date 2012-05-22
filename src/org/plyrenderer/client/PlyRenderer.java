@@ -58,6 +58,8 @@ public class PlyRenderer implements EntryPoint {
         RootPanel.get("canvas").add(canvas);
         renderer = new Renderer(canvas);
 
+        createControl();
+
         service.getInfo(new AsyncCallback<PlyInfo>() {
             public void onFailure(Throwable caught) {
                 logger.warning("Impossible to get the PLY information: " + caught);
@@ -83,9 +85,6 @@ public class PlyRenderer implements EntryPoint {
                         public void onSuccess(Point[] result) {
                             cloud.addPoints(result);
                             double percent = cloud.getNumberOfPoints() * 1. / numPoints * 100;
-
-                            createControl();
-
 
                             percentage.setText(format.format(percent) + "%");
                             renderer.render();
@@ -150,7 +149,7 @@ public class PlyRenderer implements EntryPoint {
 
         RootPanel.get("control").add(panel);
 
-        fps = new Label("xxx fps");
+        fps = new Label("---");
         renderer.addListener(new Renderer.RendererListener() {
 
             public void event() {
@@ -160,7 +159,7 @@ public class PlyRenderer implements EntryPoint {
         });
         RootPanel.get("fps").add(fps);
 
-        percentage = new Label("0 %");
+        percentage = new Label("---");
         RootPanel.get("percent").add(percentage);
 
 
