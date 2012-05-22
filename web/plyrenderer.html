@@ -20,25 +20,27 @@
 <!--                                           -->
 <body>
 
-<table align="center">
-    <tr bgcolor="#E0E0F0">
+<div style="background-color: #FFFFFF">
+    <table align="center" cellpadding="0px" cellspacing="0px">
+        <tr bgcolor="#E0E0F0">
 
-        <td colspan="3">
-            <div class="container">
-                <div id="canvas" style="width: 500px; height: 500px">
-                    <div class="absolute">
-                        <img id="loading" src="images/loading.gif" alt="Please wait">
+            <td colspan="3">
+                <div class="container">
+                    <div id="canvas" style="width: 500px; height: 500px">
+                        <div class="absolute">
+                            <img id="loading" src="images/loading.gif" alt="Please wait">
+                        </div>
                     </div>
                 </div>
-            </div>
-        </td>
+            </td>
 
-    </tr>
-    <tr bgcolor="#FFFFFF">
-        <td id="control"></td>
-        <td id="percent"></td>
-        <td id="fps"></td>
-    </tr>
-</table>
+        </tr>
+        <tr>
+            <td id="control" width="300"></td>
+            <td id="percent" width="100"></td>
+            <td id="fps" width="100"></td>
+        </tr>
+    </table>
+</div>
 </body>
 </html>

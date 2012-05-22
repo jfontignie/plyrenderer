@@ -150,7 +150,6 @@ public class PlyRenderer implements EntryPoint {
         b3.setVisible(false);
         b1.setValue(true);
 
-
         panel.add(b1);
         panel.add(b2);
         panel.add(b3);
