@@ -28,6 +28,11 @@ public class PlyRenderer implements EntryPoint {
     private boolean added = false;
     private Label percentage;
 
+    private RadioButton b1, b2, b3;
+    private Label fps;
+
+    private Canvas canvas;
+
     private static NumberFormat format = NumberFormat.getFormat(".00");
 
     /**
@@ -37,12 +42,13 @@ public class PlyRenderer implements EntryPoint {
 
         service = PlyRendererService.App.getInstance();
 
-        final Canvas canvas = Canvas.createIfSupported();
+        canvas = Canvas.createIfSupported();
 
         if (canvas == null) {
             RootPanel.get("canvas").add(new Label("Sorry, your browser doesn't support the HTML5 Canvas element"));
             return;
         }
+
 
         //canvas.setStyleName("mainCanvas");
         canvas.setWidth(canvasWidth + "px");
@@ -51,7 +57,8 @@ public class PlyRenderer implements EntryPoint {
         canvas.setHeight(canvasHeight + "px");
         canvas.setCoordinateSpaceHeight(canvasHeight);
 
-
+        canvas.setVisible(false);
+        RootPanel.get("canvas").add(canvas);
         renderer = new Renderer(canvas);
 
         service.getInfo(new AsyncCallback<PlyInfo>() {
@@ -81,7 +88,7 @@ public class PlyRenderer implements EntryPoint {
 
                             if (!added && percent > startShowing) {
                                 createControl();
-                                RootPanel.get("canvas").add(canvas);
+
                                 added = true;
                             }
 
@@ -90,9 +97,7 @@ public class PlyRenderer implements EntryPoint {
                                 renderer.render();
                             }
                             if (cloud.getNumberOfPoints() == numPoints) {
-                                percentage.setVisible(false);
-                                RootPanel.setVisible(RootPanel.get("loading").getElement(), false);
-                                renderer.enable();
+                                enable();
                             }
 
                         }
@@ -105,49 +110,66 @@ public class PlyRenderer implements EntryPoint {
 
     }
 
+    private void enable() {
+        canvas.setVisible(true);
+        b1.setVisible(true);
+        b2.setVisible(true);
+        b3.setVisible(true);
+        fps.setVisible(true);
+        percentage.setVisible(false);
+        RootPanel.setVisible(RootPanel.get("loading").getElement(), false);
+        renderer.enable();
+    }
+
     private void createControl() {
         Panel panel = new FlowPanel();
 
-        RadioButton b1 = new RadioButton("controlGroup", "Rotation");
+
+        b1 = new RadioButton("controlGroup", "Rotate");
         b1.addValueChangeHandler(new ValueChangeHandler<Boolean>() {
             public void onValueChange(ValueChangeEvent<Boolean> booleanValueChangeEvent) {
                 if (booleanValueChangeEvent.getValue()) renderer.setInteraction(Renderer.Interaction.ROTATE);
             }
         });
-        RadioButton b2 = new RadioButton("controlGroup", "Translation");
+        b1.setVisible(false);
+
+        b2 = new RadioButton("controlGroup", "Translate");
         b2.addValueChangeHandler(new ValueChangeHandler<Boolean>() {
             public void onValueChange(ValueChangeEvent<Boolean> booleanValueChangeEvent) {
                 if (booleanValueChangeEvent.getValue()) renderer.setInteraction(Renderer.Interaction.TRANSLATE);
             }
         });
+        b2.setVisible(false);
 
-        RadioButton b3 = new RadioButton("controlGroup", "Zoom");
+        b3 = new RadioButton("controlGroup", "Zoom");
         b3.addValueChangeHandler(new ValueChangeHandler<Boolean>() {
             public void onValueChange(ValueChangeEvent<Boolean> booleanValueChangeEvent) {
                 if (booleanValueChangeEvent.getValue()) renderer.setInteraction(Renderer.Interaction.ZOOM);
             }
         });
-
+        b3.setVisible(false);
         b1.setValue(true);
+
 
         panel.add(b1);
         panel.add(b2);
         panel.add(b3);
 
-        final Label label = new Label("xxx fps");
+        RootPanel.get("control").add(panel);
+
+        fps = new Label("xxx fps");
         renderer.addListener(new Renderer.RendererListener() {
 
             public void event() {
-                label.setText(format.format(renderer.getFps()) + " fps");
+                fps.setVisible(true);
+                fps.setText(format.format(renderer.getFps()) + " fps");
             }
         });
+        RootPanel.get("fps").add(fps);
 
         percentage = new Label("0 %");
+        RootPanel.get("percent").add(percentage);
 
 
-        panel.add(label);
-        panel.add(percentage);
-
-        RootPanel.get("control").add(panel);
     }
 }

@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 
 public class PlyRendererServiceImpl extends RemoteServiceServlet implements PlyRendererService {
 
-    private static final int DEFAULT_LENGTH = 1024;
+    private static final int DEFAULT_LENGTH = 5000;
     private final Logger logger = Logger.getLogger(PlyRendererServiceImpl.class.getName());
 
     private Point[] vertexes;
