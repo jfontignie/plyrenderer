@@ -45,6 +45,8 @@ public class Renderer {
 
     private double fps;
 
+    private double[] zBuffer;
+
 
     // Scene interaction stuff
     enum Interaction {
@@ -100,6 +102,8 @@ public class Renderer {
         camera = new Camera();
         // Set the camera parameters
         camera.setWindow(canvas.getCoordinateSpaceWidth(), canvas.getCoordinateSpaceHeight());
+
+        zBuffer = new double[canvas.getCoordinateSpaceHeight() * canvas.getCoordinateSpaceWidth()];
 
         pointCloud = new PointCloud();
 
@@ -234,32 +238,6 @@ public class Renderer {
         camera.lookAt(pos, dir);
     }
 
-
-    /*
-    * Set all the pixels to black
-    *
-    */
-    public void PaintBlack(CanvasPixelArray cpa) {
-
-        logger.info("Painting the background screen: " + camera.getViewportWidth() + ":" + camera.getViewportHeight());
-
-//        ctx.setFillStyle(CssColor.make(0,0,0));
-//
-//        ctx.fillRect(0, 0, camera.viewport_width, camera.viewport_height);
-
-
-        //for (int i = 0; i < camera.viewport_width * camera.viewport_height * 4; i += 4) {
-//        for (int i = 0; i < 10000; i += 4) {
-//            cpa.set(i,0);
-//            cpa.set(i+1,0);
-//            cpa.set(i+2,0);
-//            cpa.set(i+3,255);
-//        }
-
-        logger.info("Paint successful");
-    }
-
-
     /*
     * render the points according to the camera options
     *
@@ -291,11 +269,8 @@ public class Renderer {
 
         CanvasPixelArray cpa = id.getData();
 
-//        logger.info("Painting black");
-//        // clear the drawing surface
-//        PaintBlack(cpa);
-
         double tempx, tempy, tempz;
+        double invtempz;
         double px, py;
         int pxi, pyi;
         double x, y, z;
@@ -310,23 +285,34 @@ public class Renderer {
             z = point.getPoint().getZ();
 
             tempx = x * a + y * b + z * c + d;
-            tempz = 1.0 / (x * i + y * j + z * k + l);
-            px = ca + ca * tempx * vd * tempz;
+            tempz = (x * i + y * j + z * k + l);
+
+            if (tempz <= 0) continue;
+            invtempz = 1.0 / tempz;
+
+            px = ca + ca * tempx * vd * invtempz;
             if (px < camera.getViewportWidth() && px >= 0) {
                 tempy = x * e + y * f + z * g + h;
-                py = cb - cb * tempy * vda * tempz;
+                py = cb - cb * tempy * vda * invtempz;
                 if (py < camera.getViewportHeight() && py >= 0) {
                     // Flooring is unfortunately necessary
                     pxi = (int) Math.floor(px);
                     pyi = (int) Math.floor(py);
                     index = (pyi * camera.getViewportWidth() + pxi) * 4;
 
+                    if (cpa.get(index + 3) == 254) {
+                         //Value already set, let's look in the z buffer
+                        if (zBuffer[index] <= tempz)
+                            continue;
+                    }
+
+                    zBuffer[index] = tempz;
                     int[] colour = point.getColor();
 
                     cpa.set(index, colour[0]);
                     cpa.set(index + 1, colour[1]);
                     cpa.set(index + 2, colour[2]);
-                    cpa.set(index + 3, 255);
+                    cpa.set(index + 3, 254);
 
                 }
             }
