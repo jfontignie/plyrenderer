@@ -49,7 +49,6 @@ public class Renderer {
     private BoundingBox box;
 
 
-
     // Scene interaction stuff
     enum Interaction {
         ROTATE,
@@ -243,6 +242,10 @@ public class Renderer {
         camera.lookAt(pos, dir);
     }
 
+    private static native int floor(double x) /*-{
+        return ~~x;
+    }-*/;
+
     /*
     * render the points according to the camera options
     *
@@ -301,15 +304,15 @@ public class Renderer {
                 py = cb - cb * tempy * vda * invtempz;
                 if (py < camera.getViewportHeight() && py >= 0) {
                     // Flooring is unfortunately necessary
-                    pxi = (int) px;
-                    pyi = (int) py;
+                    pxi = floor(px);
+                    pyi = floor(py);
                     index = (pyi * camera.getViewportWidth() + pxi) * 4;
 
                     //Check alpha to determine if it was already set.
                     //If not, it means it is the first time we add a pixel
                     //if yes, we already set if and need to check the value of zbuffer
                     if (cpa.get(index + 3) == 255) {
-                         //Value already set, let's look in the z buffer
+                        //Value already set, let's look in the z buffer
                         if (zBuffer[index] <= tempz)
                             continue;
                     }
