@@ -20,12 +20,9 @@ public class PlyRenderer implements EntryPoint {
     private Renderer renderer;
     private PointCloud cloud;
 
-    private static final int startShowing = 25;
-
     private PlyRendererServiceAsync service;
 
     private final Logger logger = Logger.getLogger("PlyRenderer");
-    private boolean added = false;
     private Label percentage;
 
     private RadioButton b1, b2, b3;
@@ -71,14 +68,15 @@ public class PlyRenderer implements EntryPoint {
                 renderer.setBoundingBox(result.getBoundingBox());
                 renderer.initialiseScene();
 
-                int chunksize = result.getChunkSize();
+                int chunkSize = result.getChunkSize();
                 final int numPoints = result.getNumPoints();
                 cloud = new PointCloud(numPoints);
 
                 renderer.setPointCloud(cloud);
-                for (int offset = 0; offset < numPoints; offset += chunksize) {
+                for (int offset = 0; offset < numPoints; offset += chunkSize) {
                     service.getPoints(offset, new AsyncCallback<Point[]>() {
                         public void onFailure(Throwable caught) {
+                            percentage.setText("Error!");
                             logger.warning("Impossible to get the points");
                         }
 
@@ -86,16 +84,12 @@ public class PlyRenderer implements EntryPoint {
                             cloud.addPoints(result);
                             double percent = cloud.getNumberOfPoints() * 1. / numPoints * 100;
 
-                            if (!added && percent > startShowing) {
-                                createControl();
+                            createControl();
 
-                                added = true;
-                            }
 
-                            if (added) {
-                                percentage.setText(format.format(percent) + "%");
-                                renderer.render();
-                            }
+                            percentage.setText(format.format(percent) + "%");
+                            renderer.render();
+
                             if (cloud.getNumberOfPoints() == numPoints) {
                                 enable();
                             }
