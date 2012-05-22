@@ -18,13 +18,24 @@ public class PlyRenderer implements EntryPoint {
     private static final int canvasHeight = 500;
     private static final int canvasWidth = 500;
     private Renderer renderer;
+    private PointCloud cloud;
+
+    private static final int startShowing = 25;
+
+    private PlyRendererServiceAsync service;
 
     private final Logger logger = Logger.getLogger("PlyRenderer");
+    private boolean added = false;
+    private Label percentage;
+
+    private static NumberFormat format = NumberFormat.getFormat(".00");
 
     /**
      * This is the entry point method.
      */
     public void onModuleLoad() {
+
+        service = PlyRendererService.App.getInstance();
 
         final Canvas canvas = Canvas.createIfSupported();
 
@@ -42,47 +53,75 @@ public class PlyRenderer implements EntryPoint {
 
 
         renderer = new Renderer(canvas);
-        renderer.initialiseData(new AsyncCallback<Void>() {
+
+        service.getInfo(new AsyncCallback<PlyInfo>() {
             public void onFailure(Throwable caught) {
-                logger.warning("Impossible to initialise data: " + caught);
+                logger.warning("Impossible to get the PLY information: " + caught);
+
             }
 
-            public void onSuccess(Void result) {
+            public void onSuccess(PlyInfo result) {
+                renderer.setBoundingBox(result.getBoundingBox());
                 renderer.initialiseScene();
-                createControl();
 
-                renderer.render();
+                int chunksize = result.getChunkSize();
+                final int numPoints = result.getNumPoints();
+                cloud = new PointCloud(numPoints);
+
+                renderer.setPointCloud(cloud);
+                for (int offset = 0; offset < numPoints; offset += chunksize) {
+                    service.getPoints(offset, new AsyncCallback<Point[]>() {
+                        public void onFailure(Throwable caught) {
+                            logger.warning("Impossible to get the points");
+                        }
+
+                        public void onSuccess(Point[] result) {
+                            cloud.addPoints(result);
+                            double percent = cloud.getNumberOfPoints() * 1. / numPoints * 100;
+
+                            if (!added && percent > startShowing) {
+                                createControl();
+                                RootPanel.get("canvas").add(canvas);
+                                added = true;
+                            }
+
+                            if (added) {
+                                percentage.setText(format.format(percent) + "%");
+                                renderer.render();
+                            }
+                            if (cloud.getNumberOfPoints() == numPoints) {
+                                percentage.setVisible(false);
+                                RootPanel.setVisible(RootPanel.get("loading").getElement(), false);
+                                renderer.enable();
+                            }
+
+                        }
+                    });
+                }
 
 
-                // Assume that the host HTML has elements defined whose
-                // IDs are "slot1", "slot2".  In a real app, you probably would not want
-                // to hard-code IDs.  Instead, you could, for example, search for all
-                // elements with a particular CSS class and replace them with widgets.
-                //
-                RootPanel.get("canvas").add(canvas);
             }
         });
-
 
     }
 
     private void createControl() {
         Panel panel = new FlowPanel();
 
-        RadioButton b1 = new RadioButton("controlGroup","Rotation");
+        RadioButton b1 = new RadioButton("controlGroup", "Rotation");
         b1.addValueChangeHandler(new ValueChangeHandler<Boolean>() {
             public void onValueChange(ValueChangeEvent<Boolean> booleanValueChangeEvent) {
                 if (booleanValueChangeEvent.getValue()) renderer.setInteraction(Renderer.Interaction.ROTATE);
             }
         });
-        RadioButton b2 = new RadioButton("controlGroup","Translation");
+        RadioButton b2 = new RadioButton("controlGroup", "Translation");
         b2.addValueChangeHandler(new ValueChangeHandler<Boolean>() {
             public void onValueChange(ValueChangeEvent<Boolean> booleanValueChangeEvent) {
                 if (booleanValueChangeEvent.getValue()) renderer.setInteraction(Renderer.Interaction.TRANSLATE);
             }
         });
 
-        RadioButton b3 = new RadioButton("controlGroup","Zoom");
+        RadioButton b3 = new RadioButton("controlGroup", "Zoom");
         b3.addValueChangeHandler(new ValueChangeHandler<Boolean>() {
             public void onValueChange(ValueChangeEvent<Boolean> booleanValueChangeEvent) {
                 if (booleanValueChangeEvent.getValue()) renderer.setInteraction(Renderer.Interaction.ZOOM);
@@ -99,12 +138,15 @@ public class PlyRenderer implements EntryPoint {
         renderer.addListener(new Renderer.RendererListener() {
 
             public void event() {
-
-              label.setText(NumberFormat.getFormat(".00").format(renderer.getFps()) + " fps");
+                label.setText(format.format(renderer.getFps()) + " fps");
             }
         });
 
+        percentage = new Label("0 %");
+
+
         panel.add(label);
+        panel.add(percentage);
 
         RootPanel.get("control").add(panel);
     }

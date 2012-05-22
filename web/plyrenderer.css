@@ -10,7 +10,16 @@ body, td, a, div, .p {
     font-family: arial, sans-serif
 }
 
-
-.background{
+.background {
     background-color: #FFEFE0
+}
+
+.absolute {
+    position: absolute;
+    top: 186px;
+    left: 186px;
+}
+
+.container {
+    position: relative;
 }

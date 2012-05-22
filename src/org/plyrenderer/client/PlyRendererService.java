@@ -7,9 +7,9 @@ import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
 @RemoteServiceRelativePath("PlyRendererService")
 public interface PlyRendererService extends RemoteService {
 
-    int getNumPoints();
-
     Point[] getPoints(int offset);
+
+    PlyInfo getInfo();
 
     /**
      * Utility/Convenience class.

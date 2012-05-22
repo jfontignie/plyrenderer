@@ -6,7 +6,6 @@ import com.google.gwt.canvas.dom.client.Context2d;
 import com.google.gwt.canvas.dom.client.ImageData;
 import com.google.gwt.dom.client.Touch;
 import com.google.gwt.event.dom.client.*;
-import com.google.gwt.user.client.rpc.AsyncCallback;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +45,9 @@ public class Renderer {
     private double fps;
 
     private double[] zBuffer;
+
+    private BoundingBox box;
+
 
 
     // Scene interaction stuff
@@ -105,11 +107,20 @@ public class Renderer {
 
         zBuffer = new double[canvas.getCoordinateSpaceHeight() * canvas.getCoordinateSpaceWidth()];
 
-        pointCloud = new PointCloud();
-
         listeners = new ArrayList<RendererListener>();
 
+    }
 
+
+    public void setBoundingBox(BoundingBox box) {
+        this.box = box;
+    }
+
+    public void setPointCloud(PointCloud cloud) {
+        this.pointCloud = cloud;
+    }
+
+    public void enable() {
         canvas.addKeyDownHandler(new KeyDownHandler() {
 
             public void onKeyDown(KeyDownEvent event) {
@@ -201,13 +212,8 @@ public class Renderer {
 
             }
         });
-
     }
 
-
-    public void initialiseData(AsyncCallback<Void> callback) {
-        pointCloud.InitialiseData(callback);
-    }
 
     public void setInteraction(Interaction interaction) {
         this.interaction = interaction;
@@ -218,7 +224,6 @@ public class Renderer {
     *  on the input data
     */
     public void initialiseScene() {
-        BoundingBox box = pointCloud.getBoundaries();
 
         // Camera variables
         Vector3d pos = new Vector3d();
@@ -296,11 +301,14 @@ public class Renderer {
                 py = cb - cb * tempy * vda * invtempz;
                 if (py < camera.getViewportHeight() && py >= 0) {
                     // Flooring is unfortunately necessary
-                    pxi = (int) Math.floor(px);
-                    pyi = (int) Math.floor(py);
+                    pxi = (int) px;
+                    pyi = (int) py;
                     index = (pyi * camera.getViewportWidth() + pxi) * 4;
 
-                    if (cpa.get(index + 3) == 254) {
+                    //Check alpha to determine if it was already set.
+                    //If not, it means it is the first time we add a pixel
+                    //if yes, we already set if and need to check the value of zbuffer
+                    if (cpa.get(index + 3) == 255) {
                          //Value already set, let's look in the z buffer
                         if (zBuffer[index] <= tempz)
                             continue;
@@ -312,7 +320,7 @@ public class Renderer {
                     cpa.set(index, colour[0]);
                     cpa.set(index + 1, colour[1]);
                     cpa.set(index + 2, colour[2]);
-                    cpa.set(index + 3, 254);
+                    cpa.set(index + 3, 255);
 
                 }
             }

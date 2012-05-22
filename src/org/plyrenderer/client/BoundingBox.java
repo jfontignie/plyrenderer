@@ -1,11 +1,13 @@
 package org.plyrenderer.client;
 
+import java.io.Serializable;
+
 /**
  * Author: Jacques Fontignie
  * Date: 5/21/12
  * Time: 9:13 AM
  */
-public class BoundingBox {
+public class BoundingBox implements Serializable {
 
     private double minX;
     private double maxX;
