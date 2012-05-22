@@ -69,6 +69,7 @@ public class PlyRenderer implements EntryPoint {
             public void onSuccess(PlyInfo result) {
                 renderer.setBoundingBox(result.getBoundingBox());
                 renderer.initialiseScene();
+                canvas.setVisible(true);
 
                 int chunkSize = result.getChunkSize();
                 final int numPoints = result.getNumPoints();
@@ -104,7 +105,6 @@ public class PlyRenderer implements EntryPoint {
     }
 
     private void enable() {
-        canvas.setVisible(true);
         b1.setVisible(true);
         b2.setVisible(true);
         b3.setVisible(true);
