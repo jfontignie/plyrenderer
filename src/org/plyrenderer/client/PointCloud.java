@@ -42,6 +42,7 @@ public class PointCloud {
     }
 
     public void addPoints(Point[] result) {
+        //noinspection ForLoopReplaceableByForEach
         for (int i = 0; i < result.length; i++) {
             points[numberOfPoints++] = result[i];
         }

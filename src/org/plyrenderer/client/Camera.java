@@ -165,7 +165,7 @@ public class Camera {
 
 
 // Plug values into translation matrix T
-        Matrix3d viewMoveMatrix = Matrix3d.MoveFill(Vector3d.minus(pos));
+        Matrix3d viewMoveMatrix = Matrix3d.moveFill(Vector3d.minus(pos));
 
 // build the World Transform
         worldTransform = Matrix3d.multiply(viewRotationMatrix, viewMoveMatrix);

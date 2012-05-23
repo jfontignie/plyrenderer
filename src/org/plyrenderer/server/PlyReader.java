@@ -26,6 +26,7 @@ import java.util.logging.Logger;
  * Time: 2:40 PM
  */
 public class PlyReader {
+    //TODO DIRTY!!! REWRITE THE CLASS
 
     private final Logger logger = Logger.getLogger(PlyReader.class.getName());
     private BufferedReader reader;
@@ -110,11 +111,6 @@ public class PlyReader {
             vertexes[i] = p;
         }
 
-    }
-
-
-    public int getNumVertexes() {
-        return vertexes.length;
     }
 
     public Point[] getVertexes() {

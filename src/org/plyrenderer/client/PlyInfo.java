@@ -32,6 +32,7 @@ public class PlyInfo implements Serializable {
     }
 
 
+    //noinspection unused
     public PlyInfo() {}
 
     public BoundingBox getBoundingBox() {

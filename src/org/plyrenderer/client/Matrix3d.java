@@ -44,6 +44,7 @@ public class Matrix3d {
 
         double[] A = mA.array;
         double[] B = mB.array;
+        @SuppressWarnings("MismatchedReadAndWriteOfArray")
         double [] C = mC.array;
 
         C[0] = A[0] * B[0] + A[1] * B[4] + A[2] * B[8];
@@ -64,8 +65,9 @@ public class Matrix3d {
 
     }
 
-    public static Matrix3d MoveFill(Vector3d v) {
+    public static Matrix3d moveFill(Vector3d v) {
         Matrix3d mA = new Matrix3d();
+        @SuppressWarnings("MismatchedReadAndWriteOfArray")
         double [] A = mA.array;
 
         A[0] = 1;
