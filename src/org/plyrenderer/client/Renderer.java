@@ -31,15 +31,10 @@ import java.util.logging.Logger;
 public class Renderer {
 
 
-/* Copyright: Mark Dwyer (markus.dwyer@gmail.com)
+/*
+* Code translated from: http://mdkey.org/?p=406
+* original source code: Mark Dwyer (markus.dwyer@gmail.com)
 *
-* Date: 21 February, 2012
-*
-*
-* There is no warranty that it is fit for any particular purpose, or that it
-* will work at all. You use this source code solely at your own risk, and no
-* liability can be assumed for any damage or loss incurred
-* by your use of this software.
 */
 
     private Logger logger = Logger.getLogger("Renderer");
@@ -296,8 +291,8 @@ public class Renderer {
         double x, y, z;
         int index;
 
-        double cavd = ca*vd;
-        double cbvda = cb*vda;
+        double cavd = ca * vd;
+        double cbvda = cb * vda;
 
         // Draw the points
         for (int p = 0; p < n; p++) {

@@ -22,7 +22,7 @@ public class Camera {
 
 /*
  * Code translated from: http://mdkey.org/?p=406
- * Copyright: Mark Dwyer (markus.dwyer@gmail.com)
+ * original source code: Mark Dwyer (markus.dwyer@gmail.com)
  */
 
     private Matrix3d viewRotationMatrix = new Matrix3d();
