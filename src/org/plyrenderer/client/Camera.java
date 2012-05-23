@@ -66,16 +66,18 @@ public class Camera {
     public int lookAt(Vector3d pos, Vector3d at) {
         // the View or "new Z" vector
         Vector3d ViewOut = new Vector3d();
-// the Up or "new Y" vector
+        // the Up or "new Y" vector
         Vector3d viewUp = new Vector3d();
-// the Right or "new X" vector
+        // the Right or "new X" vector
         Vector3d ViewRight = new Vector3d();
 
-// for normalizing the View vector
+        // for normalizing the View vector
         double ViewMagnitude;
-// for normalizing the Up vector
+
+        // for normalizing the Up vector
         double UpMagnitude;
-// magnitude of projection of View Vector3d on World UP
+
+        // magnitude of projection of View Vector3d on World UP
         double UpProjection;
 
         position.set(pos);
@@ -89,21 +91,21 @@ public class Camera {
         ViewMagnitude = ViewOut.normalize();
         distance = ViewMagnitude;
 
-// invalid points (not far enough apart)
+        // invalid points (not far enough apart)
         if (ViewMagnitude < .000001)
             return -1;
 
-// normalize. This is the unit vector in the "new Z" direction
+        // normalize. This is the unit vector in the "new Z" direction
         ViewOut.div(ViewMagnitude);
 
 
-// Now the hard part: The ViewUp or "new Y" vector
+        // Now the hard part: The ViewUp or "new Y" vector
 
-// dot product of ViewOut vector and World Up vector gives projection of
-// of ViewOut on WorldUp
+        // dot product of ViewOut vector and World Up vector gives projection of
+        // of ViewOut on WorldUp
         UpProjection = ViewOut.dotProduct(WorldUp);
 
-// first try at making a View Up vector: use World Up
+        // first try at making a View Up vector: use World Up
 
         //Equivalent to: WorldUp - UpProjection*ViewOut
         viewUp.set(ViewOut);
@@ -111,7 +113,7 @@ public class Camera {
         viewUp.mul(UpProjection);
         viewUp.add(WorldUp);
 
-// Check for validity:
+        // Check for validity:
         UpMagnitude = viewUp.normalizeSquare();
 
         if (UpMagnitude < .0000001) {
@@ -121,7 +123,7 @@ public class Camera {
             viewUp.setY(1 - ViewOut.getY() * ViewOut.getY());
             viewUp.setZ(-ViewOut.getY() * ViewOut.getZ());
 
-// Check for validity:
+            // Check for validity:
             UpMagnitude = viewUp.normalizeSquare();
 
             if (UpMagnitude < .0000001) {
@@ -130,7 +132,7 @@ public class Camera {
                 viewUp.setY(-ViewOut.getZ() * ViewOut.getY());
                 viewUp.setZ(1 - ViewOut.getZ() * ViewOut.getZ());
 
-// Check for validity:
+                // Check for validity:
                 UpMagnitude = viewUp.normalizeSquare();
 
                 if (UpMagnitude < .0000001)
@@ -144,10 +146,10 @@ public class Camera {
 
         UpVector(viewUp);
 
-// Calculate the Right Vector3d. Use cross product of Out and Up.
+        // Calculate the Right Vector3d. Use cross product of Out and Up.
         ViewRight.crossProduct(viewUp, ViewOut);
 
-// Plug values into rotation matrix R
+        // Plug values into rotation matrix R
         viewRotationMatrix.set(0, 0, ViewRight.getX());
         viewRotationMatrix.set(0, 1, ViewRight.getY());
         viewRotationMatrix.set(0, 2, ViewRight.getZ());
@@ -164,10 +166,10 @@ public class Camera {
         viewRotationMatrix.set(2, 3, 0);
 
 
-// Plug values into translation matrix T
+        // Plug values into translation matrix T
         Matrix3d viewMoveMatrix = Matrix3d.moveFill(Vector3d.minus(pos));
 
-// build the World Transform
+        // build the World Transform
         worldTransform = Matrix3d.multiply(viewRotationMatrix, viewMoveMatrix);
         //worldTransform = MatrixMultiply(viewRotationMatrix, ViewMoveMatrix);
 
@@ -191,14 +193,14 @@ public class Camera {
         Vector3d axis = new Vector3d();
 
 
-// Cross product
+        // Cross product
         axis.crossProduct(directionOfProjection, WorldUp);
-// Translate point relative to origin
+        // Translate point relative to origin
         position.sub(focalPoint);
 
         Vector3d newPosition = Vector3d.rotate(position, axis, theta);
 
-// Translate point back to world space
+        // Translate point back to world space
         position.add(newPosition, focalPoint);
         lookAt(position, focalPoint);
     }
@@ -210,7 +212,7 @@ public class Camera {
     public void rotateRight(double theta) {
 
 
-// Axis to rotate around - up vector
+        // Axis to rotate around - up vector
         position.sub(focalPoint);
 
         Vector3d newPosition = Vector3d.rotate(position, WorldUp, theta);
@@ -243,7 +245,7 @@ public class Camera {
         // the Right or "new X" vector
         Vector3d ViewRight = new Vector3d();
 
-// Calculate the Right Vector3d. Use cross product of Out and Up.
+        // Calculate the Right Vector3d. Use cross product of Out and Up.
         ViewRight.crossProduct(WorldUp, directionOfProjection);
 
         position.setX(position.getX() + ViewRight.getX() * dist);

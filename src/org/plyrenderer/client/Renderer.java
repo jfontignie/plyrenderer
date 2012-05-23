@@ -296,6 +296,9 @@ public class Renderer {
         double x, y, z;
         int index;
 
+        double cavd = ca*vd;
+        double cbvda = cb*vda;
+
         // Draw the points
         for (int p = 0; p < n; p++) {
             Point point = pointCloud.getPoint(p);
@@ -310,10 +313,10 @@ public class Renderer {
             if (tempz <= 0) continue;
             invtempz = 1.0 / tempz;
 
-            px = ca + ca * tempx * vd * invtempz;
+            px = ca + cavd * tempx * invtempz;
             if (px < camera.getViewportWidth() && px >= 0) {
                 tempy = x * e + y * f + z * g + h;
-                py = cb - cb * tempy * vda * invtempz;
+                py = cb - cbvda * tempy * invtempz;
                 if (py < camera.getViewportHeight() && py >= 0) {
                     // Flooring is unfortunately necessary
                     pxi = floor(px);
