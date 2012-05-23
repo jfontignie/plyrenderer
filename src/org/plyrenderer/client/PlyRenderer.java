@@ -17,6 +17,7 @@ import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
 import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.i18n.client.NumberFormat;
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.*;
 
@@ -26,6 +27,8 @@ import java.util.logging.Logger;
  * Entry point classes define <code>onModuleLoad()</code>
  */
 public class PlyRenderer implements EntryPoint {
+
+    private static final String DEFAULT_PLY = "sample";
 
     private static final int canvasHeight = 500;
     private static final int canvasWidth = 500;
@@ -43,6 +46,8 @@ public class PlyRenderer implements EntryPoint {
     private Canvas canvas;
 
     private static NumberFormat format = NumberFormat.getFormat(".00");
+
+    private String ply;
 
     /**
      * This is the entry point method.
@@ -72,7 +77,11 @@ public class PlyRenderer implements EntryPoint {
 
         createControl();
 
-        service.getInfo(new AsyncCallback<PlyInfo>() {
+        ply = Window.Location.getParameter("ply");
+        if (ply == null || ply.equals(""))
+            ply = DEFAULT_PLY;
+
+        service.getInfo(ply,new AsyncCallback<PlyInfo>() {
             public void onFailure(Throwable caught) {
                 logger.warning("Impossible to get the PLY information: " + caught);
 
@@ -89,7 +98,7 @@ public class PlyRenderer implements EntryPoint {
 
                 renderer.setPointCloud(cloud);
                 for (int offset = 0; offset < numPoints; offset += chunkSize) {
-                    service.getPoints(offset, new AsyncCallback<Point[]>() {
+                    service.getPoints(ply,offset, new AsyncCallback<Point[]>() {
                         public void onFailure(Throwable caught) {
                             percentage.setText("Error!");
                             logger.warning("Impossible to get the points");

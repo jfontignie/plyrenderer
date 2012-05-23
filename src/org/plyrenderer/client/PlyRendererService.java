@@ -16,12 +16,14 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.user.client.rpc.RemoteService;
 import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
 
+import java.io.IOException;
+
 @RemoteServiceRelativePath("PlyRendererService")
 public interface PlyRendererService extends RemoteService {
 
-    Point[] getPoints(int offset);
+    Point[] getPoints(String ply, int offset) throws IOException;
 
-    PlyInfo getInfo();
+    PlyInfo getInfo(String ply);
 
     /**
      * Utility/Convenience class.
