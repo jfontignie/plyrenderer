@@ -17,5 +17,5 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 public interface PlyRendererServiceAsync {
     void getPoints(String ply, int offset, AsyncCallback<Point[]> async);
 
-    void getInfo(String ply, AsyncCallback<PlyInfo> async);
+    void getInfo(String ply, AsyncCallback<PlyInfoImpl> async);
 }

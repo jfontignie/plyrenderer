@@ -13,6 +13,8 @@
 package org.plyrenderer.client;
 
 import java.io.Serializable;
+import java.util.logging.Logger;
+
 
 /**
  * Author: Jacques Fontignie
@@ -38,6 +40,18 @@ public class Point implements Serializable {
         color = new int[3];
     }
 
+    public Point(String string) {
+        String array[] = string.split("\\,");
+
+        point = new Vector3d(Double.valueOf(array[0]), Double.valueOf(array[1]), Double.valueOf(array[2]));
+        normal = new Vector3d(Double.valueOf(array[3]), Double.valueOf(array[4]), Double.valueOf(array[5]));
+        color[0] = Integer.valueOf(array[6]);
+        color[1] = Integer.valueOf(array[7]);
+        color[2] = Integer.valueOf(array[8]);
+        Logger.getLogger("test").info("Point created");
+
+    }
+
     public Vector3d getPoint() {
         return point;
     }
@@ -49,4 +63,22 @@ public class Point implements Serializable {
     public int[] getColor() {
         return color;
     }
+
+    public String toStorageString() {
+        return point.toStorageString() + "," + normal.toStorageString() + "," +
+                color[0] + "," + color[1] + "," + color[2];
+    }
+
+    public String toJson() {
+        return "{" +
+                JsonUtils.createField("x", point.getX()) + "," +
+                JsonUtils.createField("y", point.getY()) + "," +
+                JsonUtils.createField("z", point.getZ()) + "," +
+                JsonUtils.createField("r", color[0]) + "," +
+                JsonUtils.createField("g", color[1]) + "," +
+                JsonUtils.createField("b", color[2]) +
+                "}";
+    }
+
+
 }

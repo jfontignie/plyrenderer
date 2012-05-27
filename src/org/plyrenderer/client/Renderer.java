@@ -339,6 +339,7 @@ public class Renderer {
             }
         }
 
+
         logger.fine("Set the new image");
         // Copy the canvas to the HTML5 context
         ctx.putImageData(id, 0, 0);

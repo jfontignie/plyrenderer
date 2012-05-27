@@ -178,4 +178,8 @@ public class Vector3d implements Serializable {
     public double dotProduct(Vector3d v) {
         return x * v.x + y * v.y + z * v.z;
     }
+
+    public String toStorageString() {
+        return x + "," + y + "," + z;
+    }
 }

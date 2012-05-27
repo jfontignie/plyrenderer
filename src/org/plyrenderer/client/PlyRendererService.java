@@ -23,7 +23,7 @@ public interface PlyRendererService extends RemoteService {
 
     Point[] getPoints(String ply, int offset) throws IOException;
 
-    PlyInfo getInfo(String ply);
+    PlyInfoImpl getInfo(String ply);
 
     /**
      * Utility/Convenience class.

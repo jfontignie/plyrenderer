@@ -47,4 +47,8 @@ public class PointCloud {
             points[numberOfPoints++] = result[i];
         }
     }
+
+    public void addPoint(Point p) {
+        points[numberOfPoints++] = p;
+    }
 }

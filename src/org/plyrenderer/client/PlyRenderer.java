@@ -12,8 +12,11 @@
 
 package org.plyrenderer.client;
 
+import com.google.gwt.animation.client.AnimationScheduler;
 import com.google.gwt.canvas.client.Canvas;
 import com.google.gwt.core.client.EntryPoint;
+import com.google.gwt.core.client.JavaScriptObject;
+import com.google.gwt.core.client.JsArray;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
 import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.i18n.client.NumberFormat;
@@ -28,16 +31,20 @@ import java.util.logging.Logger;
  */
 public class PlyRenderer implements EntryPoint {
 
+    static final String VERSION = "1";
+
     private static final String DEFAULT_PLY = "sample";
 
     private static final int canvasHeight = 500;
     private static final int canvasWidth = 500;
+    public static final String POINTS = "points";
+    public static final String PLY_INFO = "PlyInfo";
     private Renderer renderer;
     private PointCloud cloud;
 
     private PlyRendererServiceAsync service;
 
-    private final Logger logger = Logger.getLogger("PlyRenderer");
+    private final Logger logger = Logger.getLogger(this.getClass().getName());
     private Label percentage;
 
     private RadioButton b1, b2, b3;
@@ -48,6 +55,8 @@ public class PlyRenderer implements EntryPoint {
     private static NumberFormat format = NumberFormat.getFormat(".00");
 
     private String ply;
+
+    private StorageSystem storage;
 
     /**
      * This is the entry point method.
@@ -81,49 +90,172 @@ public class PlyRenderer implements EntryPoint {
         if (ply == null || ply.equals(""))
             ply = DEFAULT_PLY;
 
-        service.getInfo(ply,new AsyncCallback<PlyInfo>() {
-            public void onFailure(Throwable caught) {
-                logger.warning("Impossible to get the PLY information: " + caught);
+        storage = new StorageSystem(ply);
+
+        String value = storage.load(ply);
+
+        boolean uptodate = false;
+        if (value != null) {
+            uptodate = VERSION.equals(value);
+            if (!uptodate) storage.clear();
+        }
+
+
+        if (uptodate) {
+            logger.info(ply + " found, will load from storage device");
+            //Data is present, let's load it
+            String plyContent = storage.load(PLY_INFO);
+            logger.info("PlyContent is: " + plyContent);
+
+            if (plyContent != null) {
+                PlyInfo plyInfo = asPlyInfo(plyContent);
+                setPlyInfo(plyInfo);
+                return;
 
             }
-
-            public void onSuccess(PlyInfo result) {
-                renderer.setBoundingBox(result.getBoundingBox());
-                renderer.initialiseScene();
-                canvas.setVisible(true);
-
-                int chunkSize = result.getChunkSize();
-                final int numPoints = result.getNumPoints();
-                cloud = new PointCloud(numPoints);
-
-                renderer.setPointCloud(cloud);
-                for (int offset = 0; offset < numPoints; offset += chunkSize) {
-                    service.getPoints(ply,offset, new AsyncCallback<Point[]>() {
-                        public void onFailure(Throwable caught) {
-                            percentage.setText("Error!");
-                            logger.warning("Impossible to get the points");
-                        }
-
-                        public void onSuccess(Point[] result) {
-                            cloud.addPoints(result);
-                            double percent = cloud.getNumberOfPoints() * 1. / numPoints * 100;
-
-                            percentage.setText(format.format(percent) + "%");
-                            renderer.render();
-
-                            if (cloud.getNumberOfPoints() == numPoints) {
-                                percentage.setText(cloud.getNumberOfPoints() + " p.");
-                                enable();
-                            }
-
-                        }
-                    });
-                }
+        }
 
 
+        service.getInfo(ply, new AsyncCallback<PlyInfoImpl>() {
+            public void onFailure(Throwable caught) {
+                logger.warning("Impossible to get the PLY information: " + caught);
+            }
+
+            public void onSuccess(PlyInfoImpl result) {
+                logger.info("Successfully received the PLY information");
+                logger.info("Saving: " + ply);
+                storage.save(ply, VERSION);
+                storage.save(PLY_INFO, result.toJson());
+                setPlyInfo(result);
             }
         });
 
+
+    }
+
+
+    private void setPlyInfo(PlyInfo result) {
+
+        renderer.setBoundingBox(result.getBoundingBox());
+
+        renderer.initialiseScene();
+        canvas.setVisible(true);
+
+        int chunkSize = result.getChunkSize();
+        final int numPoints = result.getNumPoints();
+        cloud = new PointCloud(numPoints);
+
+        renderer.setPointCloud(cloud);
+
+        PointLoader loader = new PointLoader(numPoints, chunkSize);
+        loader.run();
+//        for (int offset = 0; offset < numPoints; offset += chunkSize) {
+//            //Check if offset is in storage
+//            String pointsString = storage.load(POINTS + offset);
+//            if (pointsString != null) {
+//                JsArray<JsonPoint> points = asJSPointArray(pointsString);
+//                for (int i = 0; i < points.length(); i++) {
+//                    JsonPoint p = points.get(i);
+//                    cloud.addPoint(new Point(p.getX(), p.getY(), p.getZ(), 0, 0, 0, p.getRed(), p.getGreen(), p.getBlue()));
+//                }
+//                update(numPoints);
+//            } else {
+//                downloadPoints(numPoints, offset);
+//            }
+//        }
+    }
+
+    private class PointLoader {
+        private int numPoints;
+        private int chunkSize;
+        private int offset;
+
+        public PointLoader(int numPoints, int chunkSize) {
+            this.numPoints = numPoints;
+            this.chunkSize = chunkSize;
+            offset = 0;
+        }
+
+        public void run() {
+            AnimationScheduler.get().requestAnimationFrame(new MyCallback(), canvas.getCanvasElement());
+        }
+
+        private class MyCallback implements AnimationScheduler.AnimationCallback {
+
+            public void execute(double timestamp) {
+                long start = System.currentTimeMillis();
+                for (; offset < numPoints; offset += chunkSize) {
+                    //Check if offset is in storage
+                    String pointsString = storage.load(POINTS + offset);
+                    if (pointsString != null) {
+                        JsArray<JsonPoint> points = asJSPointArray(pointsString);
+                        for (int i = 0; i < points.length(); i++) {
+                            JsonPoint p = points.get(i);
+                            cloud.addPoint(new Point(p.getX(), p.getY(), p.getZ(), 0, 0, 0, p.getRed(), p.getGreen(), p.getBlue()));
+                        }
+                        update(numPoints);
+                    } else {
+                        downloadPoints(numPoints, offset);
+                    }
+
+
+                    //If the time is more than 1 second, let's stop and ask for an animation frame
+                    if (System.currentTimeMillis() - start > 1000) {
+                        offset += chunkSize;
+                        if (offset < numPoints) {
+                            AnimationScheduler.get().requestAnimationFrame(this, canvas.getCanvasElement());
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+
+    }
+
+    private void update(int numPoints) {
+        double percent = cloud.getNumberOfPoints() * 1. / numPoints * 100;
+
+        percentage.setText(format.format(percent) + "%");
+        renderer.render();
+
+        if (cloud.getNumberOfPoints() == numPoints) {
+            percentage.setText(cloud.getNumberOfPoints() + " p.");
+            enable();
+        }
+
+    }
+
+
+    private void downloadPoints(final int numPoints, final int offset) {
+        service.getPoints(ply, offset, new AsyncCallback<Point[]>() {
+            public void onFailure(Throwable caught) {
+                percentage.setText("Error!");
+                logger.warning("Impossible to get the points");
+            }
+
+            public void onSuccess(Point[] result) {
+                //Let's save the points in the storage...
+
+                StringBuilder builder = new StringBuilder("[");
+                for (Point p : result) {
+                    builder.append(p.toJson());
+                    builder.append(",");
+                }
+                builder.append("]");
+
+                try {
+                    storage.save(POINTS + offset, builder.toString());
+                } catch (Exception e) {
+                    logger.warning("Impossible to save: probably out of memory");
+                }
+
+                cloud.addPoints(result);
+                update(numPoints);
+
+            }
+        });
     }
 
     private void enable() {
@@ -185,4 +317,48 @@ public class PlyRenderer implements EntryPoint {
 
 
     }
+
+
+    private static native JsonPlyInfo asPlyInfo(String json) /*-{
+        eval('var res = ' + json);
+        return res;
+    }-*/;
+
+    private static native JsArray<JsonPoint> asJSPointArray(String json) /*-{
+        eval('var res = ' + json);
+        return res;
+    }-*/;
+
+    private static class JsonPoint extends JavaScriptObject {
+        protected JsonPoint() {
+        }
+
+        public native final double getX() /*-{
+            return this.x;
+        }-*/;
+
+        public native final double getY() /*-{
+            return this.y;
+        }-*/;
+
+        public native final double getZ() /*-{
+            return this.z;
+        }-*/;
+
+        public native final int getRed() /*-{
+            return this.r;
+        }-*/;
+
+
+        public native final int getGreen() /*-{
+            return this.g;
+        }-*/;
+
+
+        public native final int getBlue() /*-{
+            return this.b;
+        }-*/;
+
+    }
+
 }

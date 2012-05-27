@@ -13,10 +13,7 @@
 package org.plyrenderer.server;
 
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
-import org.plyrenderer.client.BoundingBox;
-import org.plyrenderer.client.PlyInfo;
-import org.plyrenderer.client.PlyRendererService;
-import org.plyrenderer.client.Point;
+import org.plyrenderer.client.*;
 
 import java.io.File;
 import java.io.FileReader;
@@ -69,7 +66,7 @@ public class PlyRendererServiceImpl extends RemoteServiceServlet implements PlyR
         return result;
     }
 
-    public PlyInfo getInfo(String ply) {
+    public PlyInfoImpl getInfo(String ply) {
         try {
             return map.get(ply).getInfo();
         } catch (IOException e) {
@@ -78,7 +75,7 @@ public class PlyRendererServiceImpl extends RemoteServiceServlet implements PlyR
     }
 
     private class Container {
-        private PlyInfo info;
+        private PlyInfoImpl info;
 
         private Point[] vertexes;
 
@@ -94,15 +91,15 @@ public class PlyRendererServiceImpl extends RemoteServiceServlet implements PlyR
             PlyReader reader = new PlyReader(new FileReader(file));
             reader.parse();
             vertexes = reader.getVertexes();
-            BoundingBox box = new BoundingBox();
+            BoundingBoxImpl box = new BoundingBoxImpl();
             for (Point p : vertexes)
                 box.addPoint(p);
 
             box.flush();
-            info = new PlyInfo(box, vertexes.length, DEFAULT_LENGTH);
+            info = new PlyInfoImpl(box, vertexes.length, DEFAULT_LENGTH);
         }
 
-        public PlyInfo getInfo() throws IOException {
+        public PlyInfoImpl getInfo() throws IOException {
             if (info == null) parse();
             return info;
         }
