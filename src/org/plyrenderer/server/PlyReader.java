@@ -26,6 +26,7 @@ import java.util.logging.Logger;
  * Time: 2:40 PM
  */
 public class PlyReader {
+    public static final int DEFAULT_COLOR = 0;
     //TODO DIRTY!!! REWRITE THE CLASS
 
     private final Logger logger = Logger.getLogger(PlyReader.class.getName());
@@ -98,19 +99,34 @@ public class PlyReader {
 
             String line = reader.readLine();
             String array[] = line.split(" ");
-            Point p = new Point(Double.valueOf(array[x]),
-                    Double.valueOf(array[y]),
-                    Double.valueOf(array[z]),
-                    0,
-                    0,
-                    0,
-                    Integer.valueOf(array[cr]),
-                    Integer.valueOf(array[cg]),
-                    Integer.valueOf(array[cb])
-            );
+            Point p;
+
+            if (nx > 0 && ny > 0 && nz > 0)
+                p = new Point(Double.valueOf(array[x]),
+                        Double.valueOf(array[y]),
+                        Double.valueOf(array[z]),
+                        Double.valueOf(array[nx]),
+                        Double.valueOf(array[ny]),
+                        Double.valueOf(array[nz]),
+                        getColor(array, cr),
+                        getColor(array, cg),
+                        getColor(array, cb)
+                );
+            else
+                p = new Point(Double.valueOf(array[x]),
+                        Double.valueOf(array[y]),
+                        Double.valueOf(array[z]),
+                        getColor(array, cr),
+                        getColor(array, cg),
+                        getColor(array, cb)
+                );
             vertexes[i] = p;
         }
+    }
 
+    private int getColor(String[] array, int id) {
+        if (id < 0) return DEFAULT_COLOR;
+        return Integer.valueOf(array[id]);
     }
 
     public Point[] getVertexes() {

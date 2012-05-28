@@ -55,6 +55,14 @@ public class Renderer {
 
     private BoundingBox box;
 
+    private boolean useNormal;
+
+    private boolean useLight;
+
+    public void setUseLight(boolean useLight) {
+        this.useLight = useLight;
+    }
+
 
     // Scene interaction stuff
     enum Interaction {
@@ -70,6 +78,25 @@ public class Renderer {
     private Position oldMousePosition = new Position();
     Interaction interaction = Interaction.ROTATE;
 
+
+
+    public Renderer(Canvas canvas) {
+        this.canvas = canvas;
+        ctx = canvas.getContext2d();
+        camera = new Camera();
+        // Set the camera parameters
+        camera.setWindow(canvas.getCoordinateSpaceWidth(), canvas.getCoordinateSpaceHeight());
+
+        zBuffer = new double[canvas.getCoordinateSpaceHeight() * canvas.getCoordinateSpaceWidth()];
+
+        listeners = new ArrayList<RendererListener>();
+
+        useNormal = false;
+    }
+
+    public void setUseNormal(boolean useNormal) {
+        this.useNormal = useNormal;
+    }
 
     private void manageEvent(MouseEvent event) {
         Position newMousePosition = new Position(event.getX(), event.getY());
@@ -103,19 +130,6 @@ public class Renderer {
         render();
     }
 
-
-    public Renderer(Canvas canvas) {
-        this.canvas = canvas;
-        ctx = canvas.getContext2d();
-        camera = new Camera();
-        // Set the camera parameters
-        camera.setWindow(canvas.getCoordinateSpaceWidth(), canvas.getCoordinateSpaceHeight());
-
-        zBuffer = new double[canvas.getCoordinateSpaceHeight() * canvas.getCoordinateSpaceWidth()];
-
-        listeners = new ArrayList<RendererListener>();
-
-    }
 
 
     public void setBoundingBox(BoundingBox box) {
@@ -169,7 +183,7 @@ public class Renderer {
 
         canvas.addTouchMoveHandler(new TouchMoveHandler() {
             public void onTouchMove(TouchMoveEvent event) {
-                logger.info("Touch event occured");
+                logger.info("Touch event occurred");
                 event.preventDefault();
                 if (event.getChangedTouches().length() == 0) return;
 
@@ -301,6 +315,12 @@ public class Renderer {
             x = point.getPoint().getX();
             y = point.getPoint().getY();
             z = point.getPoint().getZ();
+
+            if (useNormal && point.hasNormal()) {
+                //if the dotproduct with the normal is smaller than 0, it means the point is showing in the other direction
+                //and we will not display it...
+                if (camera.getDirectionOfProjection().dotProduct(point.getNormal()) < 0) continue;
+            }
 
             tempx = x * a + y * b + z * c + d;
             tempz = (x * i + y * j + z * k + l);

@@ -39,6 +39,7 @@ public class PlyRenderer implements EntryPoint {
     private static final int canvasWidth = 500;
     public static final String POINTS = "points";
     public static final String PLY_INFO = "PlyInfo";
+    public static final int MAX_SIMULTANEOUS_QUERIES = 10;
     private Renderer renderer;
     private PointCloud cloud;
 
@@ -89,6 +90,17 @@ public class PlyRenderer implements EntryPoint {
         ply = Window.Location.getParameter("ply");
         if (ply == null || ply.equals(""))
             ply = DEFAULT_PLY;
+
+        String useNormal = Window.Location.getParameter("useNormal");
+        if (useNormal != null) {
+            renderer.setUseNormal(useNormal.toLowerCase().equals("true"));
+        }
+
+        String useLight = Window.Location.getParameter("useLight");
+        if (useLight != null) {
+            renderer.setUseLight(useLight.toLowerCase().equals("true"));
+        }
+
 
         storage = new StorageSystem(ply);
 
@@ -183,6 +195,7 @@ public class PlyRenderer implements EntryPoint {
         private class MyCallback implements AnimationScheduler.AnimationCallback {
 
             public void execute(double timestamp) {
+                int simultaneousQueries = 0;
                 long start = System.currentTimeMillis();
                 for (; offset < numPoints; offset += chunkSize) {
                     //Check if offset is in storage
@@ -195,12 +208,13 @@ public class PlyRenderer implements EntryPoint {
                         }
                         update(numPoints);
                     } else {
+                        simultaneousQueries++;
                         downloadPoints(numPoints, offset);
                     }
 
 
                     //If the time is more than 1 second, let's stop and ask for an animation frame
-                    if (System.currentTimeMillis() - start > 1000) {
+                    if (System.currentTimeMillis() - start > 5000 || simultaneousQueries > MAX_SIMULTANEOUS_QUERIES) {
                         offset += chunkSize;
                         if (offset < numPoints) {
                             AnimationScheduler.get().requestAnimationFrame(this, canvas.getCanvasElement());

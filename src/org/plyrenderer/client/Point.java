@@ -13,7 +13,6 @@
 package org.plyrenderer.client;
 
 import java.io.Serializable;
-import java.util.logging.Logger;
 
 
 /**
@@ -34,26 +33,24 @@ public class Point implements Serializable {
         color = new int[]{colorRed, colorGreen, colorBlue};
     }
 
+    public Point(double x, double y, double z, int colorRed, int colorGreen, int colorBlue) {
+        point = new Vector3d(x, y, z);
+        color = new int[]{colorRed, colorGreen, colorBlue};
+    }
+
+
     public Point() {
         point = new Vector3d();
         normal = new Vector3d();
         color = new int[3];
     }
 
-    public Point(String string) {
-        String array[] = string.split("\\,");
-
-        point = new Vector3d(Double.valueOf(array[0]), Double.valueOf(array[1]), Double.valueOf(array[2]));
-        normal = new Vector3d(Double.valueOf(array[3]), Double.valueOf(array[4]), Double.valueOf(array[5]));
-        color[0] = Integer.valueOf(array[6]);
-        color[1] = Integer.valueOf(array[7]);
-        color[2] = Integer.valueOf(array[8]);
-        Logger.getLogger("test").info("Point created");
-
-    }
-
     public Vector3d getPoint() {
         return point;
+    }
+
+    public boolean hasNormal() {
+        return normal != null;
     }
 
     public Vector3d getNormal() {

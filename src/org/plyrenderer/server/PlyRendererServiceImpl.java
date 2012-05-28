@@ -13,7 +13,10 @@
 package org.plyrenderer.server;
 
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
-import org.plyrenderer.client.*;
+import org.plyrenderer.client.BoundingBoxImpl;
+import org.plyrenderer.client.PlyInfoImpl;
+import org.plyrenderer.client.PlyRendererService;
+import org.plyrenderer.client.Point;
 
 import java.io.File;
 import java.io.FileReader;
@@ -81,12 +84,15 @@ public class PlyRendererServiceImpl extends RemoteServiceServlet implements PlyR
 
         private File file;
 
+
         public Container(File file) {
             this.file = file;
             info = null;
         }
 
-        private void parse() throws IOException {
+        //Make sure that the function is called only once even if multiple threads are calling it.
+        private synchronized void parse() throws IOException {
+            if (info != null) return;
             logger.info("Parsing: " + file);
             PlyReader reader = new PlyReader(new FileReader(file));
             reader.parse();

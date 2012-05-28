@@ -40,7 +40,7 @@ public class Camera {
     double aspect_ratio;
     double view_dist;
 
-    private Vector3d WorldUp = new Vector3d(0.0, 1.0, 0.0);
+    private Vector3d worldUp = new Vector3d(0.0, 1.0, 0.0);
 
     public void setWindow(int w, int h) {
         viewportWidth = w;
@@ -102,16 +102,16 @@ public class Camera {
         // Now the hard part: The ViewUp or "new Y" vector
 
         // dot product of ViewOut vector and World Up vector gives projection of
-        // of ViewOut on WorldUp
-        UpProjection = ViewOut.dotProduct(WorldUp);
+        // of ViewOut on worldUp
+        UpProjection = ViewOut.dotProduct(worldUp);
 
         // first try at making a View Up vector: use World Up
 
-        //Equivalent to: WorldUp - UpProjection*ViewOut
+        //Equivalent to: worldUp - UpProjection*ViewOut
         viewUp.set(ViewOut);
         viewUp.minus();
         viewUp.mul(UpProjection);
-        viewUp.add(WorldUp);
+        viewUp.add(worldUp);
 
         // Check for validity:
         UpMagnitude = viewUp.normalizeSquare();
@@ -144,7 +144,7 @@ public class Camera {
         UpMagnitude = Math.sqrt(UpMagnitude);
         viewUp.div(UpMagnitude);
 
-        UpVector(viewUp);
+        upVector(viewUp);
 
         // Calculate the Right Vector3d. Use cross product of Out and Up.
         ViewRight.crossProduct(viewUp, ViewOut);
@@ -180,8 +180,8 @@ public class Camera {
     *  Change the World Up vector (the default is (0,1,0))
     *
     */
-    public void UpVector(Vector3d v) {
-        WorldUp.set(v);
+    public void upVector(Vector3d v) {
+        worldUp.set(v);
     }
 
 
@@ -192,9 +192,8 @@ public class Camera {
         // Axis to rotate around - cross camera up and dir
         Vector3d axis = new Vector3d();
 
-
         // Cross product
-        axis.crossProduct(directionOfProjection, WorldUp);
+        axis.crossProduct(directionOfProjection, worldUp);
         // Translate point relative to origin
         position.sub(focalPoint);
 
@@ -215,9 +214,9 @@ public class Camera {
         // Axis to rotate around - up vector
         position.sub(focalPoint);
 
-        Vector3d newPosition = Vector3d.rotate(position, WorldUp, theta);
+        Vector3d newPosition = Vector3d.rotate(position, worldUp, theta);
 
-        //newPosition = RotatePoint(position, WorldUp, theta);
+        //newPosition = RotatePoint(position, worldUp, theta);
 
         position.add(newPosition, focalPoint);
         lookAt(position, focalPoint);
@@ -229,10 +228,16 @@ public class Camera {
     */
     public void moveForward(double dist) {
 
-        double diff = 1 - dist;
-        position.set(directionOfProjection);
-        position.mul(diff);
-        position.add(focalPoint);
+        double value = -dist;
+
+        position.setX(position.getX() + directionOfProjection.getX() * value);
+        position.setY(position.getY() + directionOfProjection.getY() * value);
+        position.setZ(position.getZ() + directionOfProjection.getZ() * value);
+
+        //double diff = 1 - dist;
+        //position.set(directionOfProjection);
+        //position.mul(diff);
+        //position.add(focalPoint);
 
         lookAt(position, focalPoint);
     }
@@ -246,7 +251,7 @@ public class Camera {
         Vector3d ViewRight = new Vector3d();
 
         // Calculate the Right Vector3d. Use cross product of Out and Up.
-        ViewRight.crossProduct(WorldUp, directionOfProjection);
+        ViewRight.crossProduct(worldUp, directionOfProjection);
 
         position.setX(position.getX() + ViewRight.getX() * dist);
         position.setY(position.getY() + ViewRight.getY() * dist);
@@ -265,15 +270,18 @@ public class Camera {
     public void moveUp(double dist) {
         double value = dist * distance;
 
-        position.setX(position.getX() + WorldUp.getX() * value);
-        position.setY(position.getY() + WorldUp.getY() * value);
-        position.setZ(position.getZ() + WorldUp.getZ() * value);
+        position.setX(position.getX() + worldUp.getX() * value);
+        position.setY(position.getY() + worldUp.getY() * value);
+        position.setZ(position.getZ() + worldUp.getZ() * value);
 
-        focalPoint.setX(focalPoint.getX() + WorldUp.getX() * value);
-        focalPoint.setY(focalPoint.getY() + WorldUp.getY() * value);
-        focalPoint.setZ(focalPoint.getZ() + WorldUp.getZ() * value);
+        focalPoint.setX(focalPoint.getX() + worldUp.getX() * value);
+        focalPoint.setY(focalPoint.getY() + worldUp.getY() * value);
+        focalPoint.setZ(focalPoint.getZ() + worldUp.getZ() * value);
 
         lookAt(position, focalPoint);
     }
 
+    public Vector3d getDirectionOfProjection() {
+        return directionOfProjection;
+    }
 }
