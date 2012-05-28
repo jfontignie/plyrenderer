@@ -87,6 +87,14 @@ public class Vector3d implements Serializable {
         return Math.sqrt(x * x + y * y + z * z);
     }
 
+
+    public void normalizeSet(){
+        double norm = normalize();
+        x /= norm;
+        y /= norm;
+        z /= norm;
+    }
+
     public void div(double value) {
         double invert = 1 / value;
         mul(invert);

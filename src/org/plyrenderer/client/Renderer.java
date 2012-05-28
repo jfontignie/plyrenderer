@@ -96,6 +96,8 @@ public class Renderer {
 
     public void setUseNormal(boolean useNormal) {
         this.useNormal = useNormal;
+
+        logger.info("Using normal: " + useNormal) ;
     }
 
     private void manageEvent(MouseEvent event) {

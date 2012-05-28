@@ -94,6 +94,8 @@ public class PlyReader {
 
         for (int i = 0; i < offset; i++) reader.readLine();
 
+        if (nx >= 0) logger.info("Normal has been found");
+
         logger.info("Number of points: " + vertexes.length);
         for (int i = 0; i < vertexes.length; i++) {
 
@@ -101,7 +103,7 @@ public class PlyReader {
             String array[] = line.split(" ");
             Point p;
 
-            if (nx > 0 && ny > 0 && nz > 0)
+            if (nx >= 0 && ny >= 0 && nz >= 0) {
                 p = new Point(Double.valueOf(array[x]),
                         Double.valueOf(array[y]),
                         Double.valueOf(array[z]),
@@ -112,7 +114,7 @@ public class PlyReader {
                         getColor(array, cg),
                         getColor(array, cb)
                 );
-            else
+            } else {
                 p = new Point(Double.valueOf(array[x]),
                         Double.valueOf(array[y]),
                         Double.valueOf(array[z]),
@@ -120,6 +122,7 @@ public class PlyReader {
                         getColor(array, cg),
                         getColor(array, cb)
                 );
+            }
             vertexes[i] = p;
         }
     }

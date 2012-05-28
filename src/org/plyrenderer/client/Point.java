@@ -41,7 +41,6 @@ public class Point implements Serializable {
 
     public Point() {
         point = new Vector3d();
-        normal = new Vector3d();
         color = new int[3];
     }
 
@@ -67,14 +66,28 @@ public class Point implements Serializable {
     }
 
     public String toJson() {
-        return "{" +
-                JsonUtils.createField("x", point.getX()) + "," +
+
+        String p = JsonUtils.createField("x", point.getX()) + "," +
                 JsonUtils.createField("y", point.getY()) + "," +
-                JsonUtils.createField("z", point.getZ()) + "," +
-                JsonUtils.createField("r", color[0]) + "," +
+                JsonUtils.createField("z", point.getZ());
+
+
+        String c = JsonUtils.createField("r", color[0]) + "," +
                 JsonUtils.createField("g", color[1]) + "," +
-                JsonUtils.createField("b", color[2]) +
-                "}";
+                JsonUtils.createField("b", color[2]);
+
+        String n;
+        if (normal != null) {
+            n = JsonUtils.createField("nx", normal.getX()) + "," +
+                    JsonUtils.createField("ny", normal.getY()) + "," +
+                    JsonUtils.createField("nz", normal.getZ());
+
+            return "{" + p + "," + n + "," + c + "}";
+        }
+
+        return "{" + p + "," + c + "}";
+
+
     }
 
 

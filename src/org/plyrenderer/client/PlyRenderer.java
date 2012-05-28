@@ -31,7 +31,7 @@ import java.util.logging.Logger;
  */
 public class PlyRenderer implements EntryPoint {
 
-    static final String VERSION = "1";
+    static final String VERSION = "1.1";
 
     private static final String DEFAULT_PLY = "sample";
 
@@ -40,6 +40,7 @@ public class PlyRenderer implements EntryPoint {
     public static final String POINTS = "points";
     public static final String PLY_INFO = "PlyInfo";
     public static final int MAX_SIMULTANEOUS_QUERIES = 10;
+    public static final int REFRESH_MILLISECONDS = 2000;
     private Renderer renderer;
     private PointCloud cloud;
 
@@ -91,13 +92,15 @@ public class PlyRenderer implements EntryPoint {
         if (ply == null || ply.equals(""))
             ply = DEFAULT_PLY;
 
-        String useNormal = Window.Location.getParameter("useNormal");
+        logger.info("--- READING PARAMETERS ---");
+        String useNormal = Window.Location.getParameter("normal");
         if (useNormal != null) {
-            renderer.setUseNormal(useNormal.toLowerCase().equals("true"));
+            renderer.setUseNormal(useNormal.equalsIgnoreCase("true"));
         }
 
-        String useLight = Window.Location.getParameter("useLight");
+        String useLight = Window.Location.getParameter("light");
         if (useLight != null) {
+            logger.info("Use Light: " + useLight);
             renderer.setUseLight(useLight.toLowerCase().equals("true"));
         }
 
@@ -161,20 +164,6 @@ public class PlyRenderer implements EntryPoint {
 
         PointLoader loader = new PointLoader(numPoints, chunkSize);
         loader.run();
-//        for (int offset = 0; offset < numPoints; offset += chunkSize) {
-//            //Check if offset is in storage
-//            String pointsString = storage.load(POINTS + offset);
-//            if (pointsString != null) {
-//                JsArray<JsonPoint> points = asJSPointArray(pointsString);
-//                for (int i = 0; i < points.length(); i++) {
-//                    JsonPoint p = points.get(i);
-//                    cloud.addPoint(new Point(p.getX(), p.getY(), p.getZ(), 0, 0, 0, p.getRed(), p.getGreen(), p.getBlue()));
-//                }
-//                update(numPoints);
-//            } else {
-//                downloadPoints(numPoints, offset);
-//            }
-//        }
     }
 
     private class PointLoader {
@@ -204,7 +193,7 @@ public class PlyRenderer implements EntryPoint {
                         JsArray<JsonPoint> points = asJSPointArray(pointsString);
                         for (int i = 0; i < points.length(); i++) {
                             JsonPoint p = points.get(i);
-                            cloud.addPoint(new Point(p.getX(), p.getY(), p.getZ(), 0, 0, 0, p.getRed(), p.getGreen(), p.getBlue()));
+                            cloud.addPoint(new Point(p.getX(), p.getY(), p.getZ(), p.getNX(), p.getNY(), p.getNZ(), p.getRed(), p.getGreen(), p.getBlue()));
                         }
                         update(numPoints);
                     } else {
@@ -214,10 +203,10 @@ public class PlyRenderer implements EntryPoint {
 
 
                     //If the time is more than 1 second, let's stop and ask for an animation frame
-                    if (System.currentTimeMillis() - start > 5000 || simultaneousQueries > MAX_SIMULTANEOUS_QUERIES) {
+                    if (System.currentTimeMillis() - start > REFRESH_MILLISECONDS || simultaneousQueries > MAX_SIMULTANEOUS_QUERIES) {
                         offset += chunkSize;
                         if (offset < numPoints) {
-                            AnimationScheduler.get().requestAnimationFrame(this, canvas.getCanvasElement());
+                            AnimationScheduler.get().requestAnimationFrame(this);
                             break;
                         }
                     }
@@ -232,12 +221,14 @@ public class PlyRenderer implements EntryPoint {
         double percent = cloud.getNumberOfPoints() * 1. / numPoints * 100;
 
         percentage.setText(format.format(percent) + "%");
+
         renderer.render();
 
         if (cloud.getNumberOfPoints() == numPoints) {
             percentage.setText(cloud.getNumberOfPoints() + " p.");
             enable();
         }
+
 
     }
 
@@ -267,7 +258,6 @@ public class PlyRenderer implements EntryPoint {
 
                 cloud.addPoints(result);
                 update(numPoints);
-
             }
         });
     }
@@ -372,6 +362,19 @@ public class PlyRenderer implements EntryPoint {
         public native final int getBlue() /*-{
             return this.b;
         }-*/;
+
+        public native final double getNX() /*-{
+            return this.nx;
+        }-*/;
+
+        public native final double getNY() /*-{
+            return this.ny;
+        }-*/;
+
+        public native final double getNZ() /*-{
+            return this.nz;
+        }-*/;
+
 
     }
 

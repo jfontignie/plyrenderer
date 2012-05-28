@@ -85,6 +85,7 @@ public class Camera {
         focalPoint.set(at);
 
         directionOfProjection.sub(position, focalPoint);
+        directionOfProjection.normalizeSet();
 
         ViewOut.sub(at, pos);
         // first, calculate and normalize the view vector
