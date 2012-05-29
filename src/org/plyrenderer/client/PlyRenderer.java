@@ -40,7 +40,7 @@ public class PlyRenderer implements EntryPoint {
     public static final String POINTS = "points";
     public static final String PLY_INFO = "PlyInfo";
     public static final int MAX_SIMULTANEOUS_QUERIES = 10;
-    public static final int REFRESH_MILLISECONDS = 2000;
+    public static final int REFRESH_MILLISECONDS = 500;
     private Renderer renderer;
     private PointCloud cloud;
 
