@@ -18,11 +18,10 @@ import org.plyrenderer.client.PlyInfoImpl;
 import org.plyrenderer.client.PlyRendererService;
 import org.plyrenderer.client.Point;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.HashMap;
 import java.util.logging.Logger;
+import java.util.zip.GZIPInputStream;
 
 public class PlyRendererServiceImpl extends RemoteServiceServlet implements PlyRendererService {
 
@@ -42,9 +41,15 @@ public class PlyRendererServiceImpl extends RemoteServiceServlet implements PlyR
             for (File file : files) {
                 if (!file.isFile()) continue;
                 String name = file.getName();
-                if (!name.toLowerCase().endsWith(".ply")) continue;
+                if (!name.toLowerCase().endsWith(".ply") && !name.toLowerCase().endsWith(".ply.gz")) continue;
+                boolean compressed = name.toLowerCase().endsWith(".ply.gz");
+                int index = name.lastIndexOf(".");
 
-                int index = name.indexOf(".");
+                if (compressed) {
+                    //Dirty code to remove the .ply.gz
+                    name = name.substring(0, index);
+                    index = name.lastIndexOf(".");
+                }
                 String id = name.substring(0, index);
                 map.put(id, new Container(file));
             }
@@ -83,10 +88,12 @@ public class PlyRendererServiceImpl extends RemoteServiceServlet implements PlyR
         private Point[] vertexes;
 
         private File file;
+        private boolean compressed;
 
 
         public Container(File file) {
             this.file = file;
+            compressed = (file.getName().toLowerCase().endsWith(".gz"));
             info = null;
         }
 
@@ -94,7 +101,14 @@ public class PlyRendererServiceImpl extends RemoteServiceServlet implements PlyR
         private synchronized void parse() throws IOException {
             if (info != null) return;
             logger.info("Parsing: " + file);
-            PlyReader reader = new PlyReader(new FileReader(file));
+            InputStreamReader streamReader;
+            if (compressed) {
+                streamReader = new InputStreamReader(new GZIPInputStream(new FileInputStream(file)));
+            }
+            else {
+                streamReader = new FileReader(file);
+            }
+            PlyReader reader = new PlyReader(streamReader);
             reader.parse();
             vertexes = reader.getVertexes();
             BoundingBoxImpl box = new BoundingBoxImpl();
