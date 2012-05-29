@@ -207,7 +207,7 @@ public class PlyRenderer implements EntryPoint {
                         offset += chunkSize;
                         if (offset < numPoints) {
                             AnimationScheduler.get().requestAnimationFrame(this);
-                            break;
+                            return;
                         }
                     }
                 }

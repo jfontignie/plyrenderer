@@ -59,6 +59,9 @@ public class Renderer {
 
     private boolean useLight;
 
+    private boolean enabled;
+    private int lastCount;
+
     public void setUseLight(boolean useLight) {
         this.useLight = useLight;
     }
@@ -79,7 +82,6 @@ public class Renderer {
     Interaction interaction = Interaction.ROTATE;
 
 
-
     public Renderer(Canvas canvas) {
         this.canvas = canvas;
         ctx = canvas.getContext2d();
@@ -92,12 +94,15 @@ public class Renderer {
         listeners = new ArrayList<RendererListener>();
 
         useNormal = false;
+
+        enabled = false;
+        lastCount = 0;
     }
 
     public void setUseNormal(boolean useNormal) {
         this.useNormal = useNormal;
 
-        logger.info("Using normal: " + useNormal) ;
+        logger.info("Using normal: " + useNormal);
     }
 
     private void manageEvent(MouseEvent event) {
@@ -131,7 +136,6 @@ public class Renderer {
         }
         render();
     }
-
 
 
     public void setBoundingBox(BoundingBox box) {
@@ -234,6 +238,8 @@ public class Renderer {
 
             }
         });
+
+        enabled = true;
     }
 
 
@@ -269,6 +275,8 @@ public class Renderer {
         return ~~x;
     }-*/;
 
+    private ImageData id = null;
+
     /*
     * render the points according to the camera options
     *
@@ -293,10 +301,29 @@ public class Renderer {
         double j = camera.worldTransform.get(2, 1);
         double k = camera.worldTransform.get(2, 2);
         double l = camera.worldTransform.get(2, 3);
-        double n = pointCloud.getNumberOfPoints();
+        int n = pointCloud.getNumberOfPoints();
 
         long start = System.currentTimeMillis();
-        ImageData id = ctx.createImageData(camera.getViewportWidth(), camera.getViewportHeight());
+
+        ImageData id;
+        int startOffset;
+
+        //Small trick to avoid rebuilding the whole image during load and download...
+        //we keep the same image and fill it
+        //when the renderer is enabled: a new image is created everytime.
+        if (!enabled) {
+            startOffset = lastCount;
+            lastCount = n;
+            if (this.id == null) {
+                this.id = ctx.createImageData(camera.getViewportWidth(), camera.getViewportHeight());
+            }
+            id = this.id;
+
+        } else {
+            startOffset = 0;
+            id = ctx.createImageData(camera.getViewportWidth(), camera.getViewportHeight());
+            this.id = null;
+        }
 
         CanvasPixelArray cpa = id.getData();
 
@@ -310,8 +337,12 @@ public class Renderer {
         double cavd = ca * vd;
         double cbvda = cb * vda;
 
+        int width = camera.getViewportWidth();
+        int heigth = camera.getViewportHeight();
+
+
         // Draw the points
-        for (int p = 0; p < n; p++) {
+        for (int p = startOffset; p < n; p++) {
             Point point = pointCloud.getPoint(p);
 
             x = point.getPoint().getX();
@@ -324,41 +355,43 @@ public class Renderer {
                 if (camera.getDirectionOfProjection().dotProduct(point.getNormal()) < 0) continue;
             }
 
-            tempx = x * a + y * b + z * c + d;
             tempz = (x * i + y * j + z * k + l);
-
             if (tempz <= 0) continue;
-            invtempz = 1.0 / tempz;
 
+            tempx = x * a + y * b + z * c + d;
+            invtempz = 1 / tempz;
             px = ca + cavd * tempx * invtempz;
-            if (px < camera.getViewportWidth() && px >= 0) {
-                tempy = x * e + y * f + z * g + h;
-                py = cb - cbvda * tempy * invtempz;
-                if (py < camera.getViewportHeight() && py >= 0) {
-                    // Flooring is unfortunately necessary
-                    pxi = floor(px);
-                    pyi = floor(py);
-                    index = (pyi * camera.getViewportWidth() + pxi) * 4;
 
-                    //Check alpha to determine if it was already set.
-                    //If not, it means it is the first time we add a pixel
-                    //if yes, we already set if and need to check the value of zbuffer
-                    if (cpa.get(index + 3) == 255) {
-                        //Value already set, let's look in the z buffer
-                        if (zBuffer[index] <= tempz)
-                            continue;
-                    }
+            if (px < 0 || px >= width) continue;
 
-                    zBuffer[index] = tempz;
-                    int[] colour = point.getColor();
+            tempy = x * e + y * f + z * g + h;
+            py = cb - cbvda * tempy * invtempz;
 
-                    cpa.set(index, colour[0]);
-                    cpa.set(index + 1, colour[1]);
-                    cpa.set(index + 2, colour[2]);
-                    cpa.set(index + 3, 255);
+            if (py < 0 || py >= heigth) continue;
 
-                }
+            // Flooring is unfortunately necessary
+            pxi = floor(px);
+            pyi = floor(py);
+            index = (pyi * width + pxi) * 4;
+
+            //Check alpha to determine if it was already set.
+            //If not, it means it is the first time we add a pixel
+            //if yes, we already set and need to check the value of zbuffer
+            if (cpa.get(index + 3) == 255) {
+                //Value already set, let's look in the z buffer
+                if (zBuffer[index] <= tempz)
+                    continue;
             }
+
+            zBuffer[index] = tempz;
+            int[] colour = point.getColor();
+
+            cpa.set(index, colour[0]);
+            cpa.set(index + 1, colour[1]);
+            cpa.set(index + 2, colour[2]);
+            cpa.set(index + 3, 255);
+
+
         }
 
 
