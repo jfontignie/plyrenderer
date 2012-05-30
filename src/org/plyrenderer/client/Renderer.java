@@ -272,7 +272,7 @@ public class Renderer {
     }
 
     private static native int floor(double x) /*-{
-        return ~~x;
+        return x | 0;
     }-*/;
 
     private ImageData id = null;
